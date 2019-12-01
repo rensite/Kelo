@@ -2,20 +2,20 @@
   #app
     header.header.header--fixed
       a(href="#").logo.header__logo
-        img(src="https://rensite.ru/files/mockup/logo.svg").logo__image
+        img(src="/assets/images/logo.svg").logo__image
       
       .header__mode.mode
         p.mode__caption(v-if='mode === "all"' @click='changeMode("todo")') ToDo Only
         p.mode__caption(v-else @click='changeMode("all")') Show All
         
       form(@submit.prevent='createTask').header__form
-        input(type='text' v-model='newTask' placeholder='What are you going to do?').input
+        input(type='text' v-model='omniInput' placeholder='What are you going to do?').input
         
       p.header__tasks Total: {{tasksTotal}}
 
     .tasks(:class='mode')
       p(v-show='tasksLeft === 0 && mode === "todo"').tasks__message Nothing to do
-      .tasks__row(v-for='task, index in tasks' :key='task.text' :class='classState(task.state)').row
+      .tasks__row(v-for='task, index in filteredTasks' :key='task.index' :class='classState(task.state)').row
         .row__id # {{task.id}}
         input(type='text' v-model='task.text').input.row__input
         .row__actions.actions
@@ -46,9 +46,14 @@ export default {
   name: 'app',
   data () {
     return {
-      newTask: '',
+      omniInput: '',
       mode: 'all',
-      tasks: []
+      tasks: [],
+      timeout: false,
+      command: {
+        action: false,
+        params: false
+      }
     }
   },
   
@@ -58,7 +63,21 @@ export default {
     },
     
     tasksLeft: function () {
+      if (this.tasks.length) { return false }
+
       return this.tasks.filter(task => task.state.length === 0).length;
+    },
+
+    filteredTasks: function () {
+      if (this.tasks.length === 0) { return false }
+
+      if (this.command.action === '/find') {
+        if (this.command.params.length > 0) {
+          return this.tasks.filter(task => task.text.toLowerCase().indexOf(this.command.params.toLowerCase()) >= 0)
+        }
+      }
+      
+      return this.tasks.filter(task => task.state.length === 0)
     }
   },
   
@@ -66,21 +85,52 @@ export default {
     tasks: {
       deep: true,
       handler: function() {
-        localStorage.setItem('tasks', JSON.stringify(this.tasks));
+        if (this.timeout) {
+          clearTimeout(this.timeout)
+        }
+
+        this.timeout = setTimeout(() => {
+          localStorage.setItem('tasks', JSON.stringify(this.tasks));
+        }, 1000);
       }
     },
     
     mode: function() {
       localStorage.setItem('mode', this.mode);
+    },
+
+    omniInput (val) {
+      let reg = /\/[a-zA-Z].{0,}\s.{1,}/;
+
+      if (val.match(reg)) {
+        let action = val.split(/ (.+)/)[0]
+        let params = val.split(/ (.+)/)[1]
+
+        if (action && action.length > 0) {
+          this.command.action = val.split(/ (.+)/)[0]
+        }
+        
+        if (params && params.length > 0) {
+          this.command.params = val.split(/ (.+)/)[1]
+        }
+
+      } else {
+          this.command.action = false
+          this.command.params = false
+      }
     }
   },
   
   mounted () {
-   if (localStorage.getItem('tasks')) {
-    this.tasks = JSON.parse(localStorage.getItem('tasks'));
-   } else {
-    localStorage.setItem('tasks', JSON.stringify(this.tasks));
-   }
+    try {
+      if(localStorage.getItem('tasks')) {
+        let tasks = localStorage.getItem('tasks')
+        this.tasks = JSON.parse(tasks);
+      }
+    } catch (e) {
+      // @ToDo: Handle
+      return false
+    }
   
     if (localStorage.getItem('mode')) {
       this.mode = localStorage.getItem('mode');
@@ -98,15 +148,20 @@ export default {
 
     extractLinks: function(string) {
       let reg = /(https?:\/\/[^\s]+)/g;
-      //eslint-disable-next-line
-      console.log(string.match(reg));
       return string.match(reg);
     },
     
     createTask: function() {
-      let task = new Task(0, this.newTask);
-      this.tasks.unshift(task);
-      this.newTask = '';
+      let reg = /\/[a-zA-Z].{0,}\s.{1,}/;
+
+      if (this.omniInput.match(reg)) {
+        this.command.action = this.omniInput.split(/ (.+)/)[0]
+        this.command.params = this.omniInput.split(/ (.+)/)[1]
+      } else {
+        let task = new Task(0, this.omniInput);
+        this.tasks.unshift(task);
+        this.omniInput = '';
+      }
     },
     
     finishTask: function(index) {
