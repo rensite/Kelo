@@ -85,7 +85,7 @@ a, a:visited {
   background: rgba(#FFF, .3);
   border: 0;
   padding: 0 2rem;
-  height: $height;
+  line-height: 2.3;
   font-size: 2rem;
   outline: none;
   width: 100%;
@@ -222,6 +222,20 @@ a, a:visited {
     border-radius: 3px;
     overflow: hidden;
   }
+
+  &__info {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    opacity: 1;
+    transition: opacity .3s ease;
+    transform: translateX(-120%);
+    display: flex;
+    align-items: center;
+    border-radius: 3px;
+    overflow: hidden;
+  }
 }
 
 .actions {
@@ -258,5 +272,65 @@ a, a:visited {
   .row.row--done {
     max-height: 0;
     opacity: 0;
+  }
+}
+
+.textarea {
+  &, &:focus {
+    outline: none;
+  }
+}
+
+.button {
+  font-size: 1.6rem;
+  box-sizing: border-box;
+  border-radius: 5px;
+  padding: .5rem 2rem;
+  cursor: pointer;
+
+  &, &:focus {
+    outline: none;
+  }
+
+  &--hollow {
+    background: none;
+    appearance: none;
+    border: none;
+  }
+}
+
+.editor {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: rgba($c-white, 1);
+  z-index: 10;
+  padding: 6.6rem 30% 5rem;
+  box-sizing: border-box;
+  overflow: scroll;
+  opacity: 0;
+  top: -100%;
+  transition: opacity .3s ease;
+
+  &__textarea {
+    width: 100%;
+    border: 1px solid rgba($c-black, .2);
+    margin: 0 auto;
+    box-sizing: border-box;
+    border-radius: 5px;
+    padding: 1rem 2rem;
+    line-height: 1;
+    font-size: 2rem;
+    height: calc(2rem * 8);
+    margin-bottom: 1rem;
+  }
+}
+
+
+.editorMode {
+  .editor {
+    opacity: 1;
+    top: 0%;
   }
 }

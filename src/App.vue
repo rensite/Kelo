@@ -1,42 +1,50 @@
 <template lang="pug">
-  #app
+  #app(:class='{"editorMode" : editor}')
     header.header.header--fixed
       a(href="#").logo.header__logo
-        img(src="/assets/images/logo.svg").logo__image
+        img(src="@/assets/images/logo.svg").logo__image
       
       .header__mode.mode
         p.mode__caption(v-if='mode === "all"' @click='changeMode("todo")') ToDo Only
         p.mode__caption(v-else @click='changeMode("all")') Show All
         
       form(@submit.prevent='createTask').header__form
-        input(type='text' v-model='omniInput' placeholder='What are you going to do?').input
+        input(type='text' v-model='current.title' @keydown.ctrl.enter.prevent='openEditor(current)' @input.lazy='inputParse(current.title)' placeholder='Type, save or /f' ref='title' tabindex='0').input
         
       p.header__tasks Total: {{tasksTotal}}
 
     .tasks(:class='mode')
-      p(v-show='tasksLeft === 0 && mode === "todo"').tasks__message Nothing to do
-      .tasks__row(v-for='task, index in filteredTasks' :key='task.index' :class='classState(task.state)').row
-        .row__id # {{task.id}}
-        input(type='text' v-model='task.text').input.row__input
+      p(v-show='noTasks').tasks__message Nothing to do
+      
+      .tasks__row(v-for='task, index in filteredTasks' :key='task.id' :class='classState(task.state)').row
+        .row__info
+          a(@click='openEditor(task, true)' v-if='task.text.length').actions__item.actions__item--nobg.row-icon
+            i.fas.fa-align-left
+        input(type='text' v-model='task.title' tabindex='-1').input.row__input
         .row__actions.actions
-          .actions__item(@click='renewTask(index)' v-if='task.state.length').row-icon
-            i.far.fa-redo
-          .actions__item(@click='finishTask(index)' v-else).row-icon
+          .actions__item(@click='renewTask(task)' v-if='task.state.length').row-icon
+            i.fas.fa-redo
+          .actions__item(@click='finishTask(task)' v-else).row-icon
             i.far.fa-check-circle
-          .actions__item(@click='removeTask(index)').row-icon
+          .actions__item(@click='removeTask(task)').row-icon
             i.far.fa-trash-alt
         .row__links
-          a(v-for='link, index in extractLinks(task.text)' :key='index' :href='link' target='_blank').actions__item.actions__item--nobg.row-icon
+          a(v-for='link, index in extractLinks(task.title)' :key='index' :href='link' target='_blank').actions__item.actions__item--nobg.row-icon
             i.fas.fa-external-link-alt
-    
-    //pre
-      p {{tasks}}
+    .editor
+      textarea(v-model='current.text' placeholder='Task description' ref="textarea" tabindex='0' v-autosize).editor__textarea.textarea
+      .editor__footer
+        button(@click='createTask').button Save
+        button(@click='openEditor').button.button--hollow Cancel
+
 </template>
 
 <script>
+// import { log } from 'util';
 class Task {
-  constructor(id = 0, text = '', state = '') {
+  constructor(id = 1, title = '', text = '', state = '') {
     this.id = id;
+    this.title = title;
     this.text = text;
     this.state = state;
   }
@@ -48,8 +56,11 @@ export default {
     return {
       omniInput: '',
       mode: 'all',
+      index: 1,
       tasks: [],
+      current: {},
       timeout: false,
+      editor: false,
       command: {
         action: false,
         params: false
@@ -62,22 +73,28 @@ export default {
       return this.tasks.length;
     },
     
-    tasksLeft: function () {
-      if (this.tasks.length) { return false }
+    noTasks: function () {
+      let result = false
 
-      return this.tasks.filter(task => task.state.length === 0).length;
+      if (this.mode === 'todo') {
+        result = this.tasks.filter(task => task.state.length === 0).length === 0
+      } else {
+        result = this.tasks.length === 0
+      }
+      
+      return result
     },
 
     filteredTasks: function () {
       if (this.tasks.length === 0) { return false }
 
-      if (this.command.action === '/find') {
+      if (this.command.action === '/f') {
         if (this.command.params.length > 0) {
-          return this.tasks.filter(task => task.text.toLowerCase().indexOf(this.command.params.toLowerCase()) >= 0)
+          return this.tasks.filter(task => task.title.toLowerCase().indexOf(this.command.params.toLowerCase()) >= 0)
         }
       }
       
-      return this.tasks.filter(task => task.state.length === 0)
+      return this.tasks
     }
   },
   
@@ -97,31 +114,18 @@ export default {
     
     mode: function() {
       localStorage.setItem('mode', this.mode);
-    },
-
-    omniInput (val) {
-      let reg = /\/[a-zA-Z].{0,}\s.{1,}/;
-
-      if (val.match(reg)) {
-        let action = val.split(/ (.+)/)[0]
-        let params = val.split(/ (.+)/)[1]
-
-        if (action && action.length > 0) {
-          this.command.action = val.split(/ (.+)/)[0]
-        }
-        
-        if (params && params.length > 0) {
-          this.command.params = val.split(/ (.+)/)[1]
-        }
-
-      } else {
-          this.command.action = false
-          this.command.params = false
-      }
     }
   },
   
   mounted () {
+    if (localStorage.getItem('index')) {
+      this.index = parseInt(localStorage.getItem('index'));
+    } else {
+      localStorage.setItem('index', this.index)
+    }
+
+    this.current = new Task(this.index)
+
     try {
       if(localStorage.getItem('tasks')) {
         let tasks = localStorage.getItem('tasks')
@@ -129,6 +133,7 @@ export default {
       }
     } catch (e) {
       // @ToDo: Handle
+      // console.log(e)
       return false
     }
   
@@ -139,7 +144,42 @@ export default {
   
   methods: {
     classState: function(state) {
-      return (state === 'done' ? 'row--' + state : '');
+      return (state === 'done' ? 'row--' + state : '')
+    },
+
+    openEditor: function(task, editTask = false) {
+      if (editTask) {
+        this.current = JSON.parse(JSON.stringify(task))
+      }
+
+      if (!this.editor) {
+        this.editor = true
+        this.$refs.textarea.focus()
+      } else if (this.editor) {
+        this.editor = false
+        this.$refs.title.focus()
+      }
+    },
+
+    inputParse (input) {
+      let reg = /\/[a-zA-Z].{0,}\s.{1,}/;
+
+      if (input.match(reg)) {
+        let action = input.split(/ (.+)/)[0]
+        let params = input.split(/ (.+)/)[1]
+
+        if (action && action.length > 0) {
+          this.command.action = input.split(/ (.+)/)[0]
+        }
+        
+        if (params && params.length > 0) {
+          this.command.params = input.split(/ (.+)/)[1]
+        }
+
+      } else {
+          this.command.action = false
+          this.command.params = false
+      }
     },
     
     changeMode: function(state) {
@@ -154,27 +194,35 @@ export default {
     createTask: function() {
       let reg = /\/[a-zA-Z].{0,}\s.{1,}/;
 
-      if (this.omniInput.match(reg)) {
+      if (this.current.title.match(reg)) {
         this.command.action = this.omniInput.split(/ (.+)/)[0]
         this.command.params = this.omniInput.split(/ (.+)/)[1]
-      } else {
-        let task = new Task(0, this.omniInput);
+      } else if (this.current.title.length > 0) {
+        let task = this.current
+        this.index++
+        localStorage.setItem('index', this.index)
+
         this.tasks.unshift(task);
-        this.omniInput = '';
+        this.current = new Task(this.index);
+      }
+
+      if (this.editor) {
+        this.editor = false
+        this.$refs.title.focus()
       }
     },
     
-    finishTask: function(index) {
-      this.$set(this.tasks[index], 'state', 'done');
+    finishTask: function(task) {
+      this.$set(task, 'state', 'done');
     },
         
-    renewTask: function(index) {
-      this.$set(this.tasks[index], 'state', '');
+    renewTask: function(task) {
+      this.$set(task, 'state', '');
     },
     
-    removeTask: function(index) {
+    removeTask: function(task) {
       if (confirm('Are you sure?')) {
-        this.tasks.splice(index, 1);
+        this.tasks.splice(this.tasks.indexOf(task), 1);
       }
     }
   }
