@@ -56,6 +56,8 @@
       let index = 1,
           taskList = []
 
+      document.title = 'Kelo - Save anything in one place';
+
       this.manageLocalStorage('index', index)
       this.manageLocalStorage('taskList', taskList)
 

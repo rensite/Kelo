@@ -1,4 +1,4 @@
-# Kelo - Save everything blazingly fast.
+# Kelo - Save anything in one place
 
 The service helps you to easily save any kind of data for later use. Currently user's data stored in the LocalStorage only. We are not stroing your data on any server yet ;)
 

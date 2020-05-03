@@ -13,7 +13,6 @@ library.add([faFireAlt, faPlus, faLink, faCheck, faTrashAlt, faRedoAlt, faCheckD
 
 Vue.component('font-awesome-icon', FontAwesomeIcon)
 
-
 import store from './store'
 
 Vue.config.productionTip = false
