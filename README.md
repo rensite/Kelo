@@ -37,11 +37,13 @@ yarn run lint
 [Tailwind.css Documentation](https://tailwindcss.com/docs/).
 [Fontawesome Icons](https://fontawesome.com/icons/).
 
-### ToDo
 
-[ ] - Search the records `/f find` 
-[ ] - Add API option to store the data on the server (or Firebase)
-[ ] - Add data types: links, vocabulary, note, contacts etc.
-[ ] - Add Telegram Bot to save the records
-[ ] - Voice records
-[ ] - Images/Files upload
+## Next tasks
+
+- [x] Re-factor the code: implement vuex store
+- [ ] Implement search on command `/f find` 
+- [ ] Add API option to store the data on the server (or Firebase)
+- [ ] Add data types: links, vocabulary, note, contacts etc.
+- [ ] Voice records
+- [ ] Implement external link scraping
+- [ ] Images/Files upload
