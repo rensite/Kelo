@@ -1,234 +1,109 @@
-<template lang="pug">
-  #app(:class='{"editorMode" : editor}')
-    header.header.header--fixed
-      a(href="#").logo.header__logo
-        img(src="@/assets/images/logo.svg").logo__image
-      
-      .header__mode.mode
-        p.mode__caption(v-if='mode === "all"' @click='changeMode("todo")') ToDo Only
-        p.mode__caption(v-else @click='changeMode("all")') Show All
-        
-      form(@submit.prevent='createTask').header__form
-        input(type='text' v-model='current.title' @keydown.ctrl.enter.prevent='openEditor(current)' @input.lazy='inputParse(current.title)' placeholder='Type, save or /f' ref='title' tabindex='0').input
-        
-      p.header__tasks Total: {{tasksTotal}}
-
-    .tasks(:class='mode')
-      p(v-show='noTasks').tasks__message Nothing to do
-      
-      .tasks__row(v-for='task, index in filteredTasks' :key='task.id' :class='classState(task.state)').row
-        .row__info
-          a(@click='openEditor(task, true)' v-if='task.text.length').actions__item.actions__item--nobg.row-icon
-            i.fas.fa-align-left
-        input(type='text' v-model='task.title' tabindex='-1').input.row__input
-        .row__actions.actions
-          .actions__item(@click='renewTask(task)' v-if='task.state.length').row-icon
-            i.fas.fa-redo
-          .actions__item(@click='finishTask(task)' v-else).row-icon
-            i.far.fa-check-circle
-          .actions__item(@click='removeTask(task)').row-icon
-            i.far.fa-trash-alt
-        .row__links
-          a(v-for='link, index in extractLinks(task.title)' :key='index' :href='link' target='_blank').actions__item.actions__item--nobg.row-icon
-            i.fas.fa-external-link-alt
-    .editor
-      textarea(v-model='current.text' placeholder='Task description' ref="textarea" tabindex='0' v-autosize).editor__textarea.textarea
-      .editor__footer
-        button(@click='createTask').button Save
-        button(@click='openEditor').button.button--hollow Cancel
-
+<template>
+  <div id="app">
+    <Header @createTask="createTask"></Header>
+    <div class="pt-16 md:pt-20">
+      <div class="container mx-auto px-2 md:px-4">
+        <div v-if="(taskList.length > 0)">
+          <div v-if="totalTasks === 0" class="flex flex-col items-center justify-center text-center text-gray-500 py-16">
+            <font-awesome-icon icon="check-double" class="mb-5 text-6xl" />
+            <span class="text-lg">All tasks had been completed! ツ</span>
+          </div>
+          <div v-for="task in taskList" :key="task.id">
+            <TaskRow :task="task" @updateTask="updateTask" @removeTask="removeTask"></TaskRow>
+          </div>
+        </div>
+        <div v-else class="flex flex-col items-center justify-center text-center text-gray-500 text-lg py-16">  
+          <font-awesome-icon icon="star" class="mb-5 text-6xl" />
+          <span>There are no tasks yet.<br> It's perfect time to start!</span>
+        </div>
+      </div>
+    </div>
+    <footer class="text-center pt-6 pb-16">
+      <span class="text-sm text-gray-300 mr-2">&copy; 2020 Renat Galin</span>
+      <a href="https://github.com/rensite/Kelo" class="text-gray-300 hover:text-gray-600" target="_blank">
+        <font-awesome-icon :icon="['fab', 'github']" prefix="fab" class="text-lg" />
+      </a>
+    </footer>
+  </div>
 </template>
 
 <script>
-// import { log } from 'util';
-class Task {
-  constructor(id = 1, title = '', text = '', state = '') {
-    this.id = id;
-    this.title = title;
-    this.text = text;
-    this.state = state;
-  }
-}
+  import Header from '@/components/Header.vue'
+  import TaskRow from '@/components/TaskRow.vue'
 
-export default {
-  name: 'app',
-  data () {
-    return {
-      omniInput: '',
-      mode: 'all',
-      index: 1,
-      tasks: [],
-      current: {},
-      timeout: false,
-      editor: false,
-      command: {
-        action: false,
-        params: false
-      }
-    }
-  },
-  
-  computed: {
-    tasksTotal: function () {
-      return this.tasks.length;
+  export default {
+    name: 'app',
+    data () {
+      return {}
+    },
+    components: {
+      Header,
+      TaskRow
+    },
+    computed: {
+      taskList () {
+        return this.$store.getters.taskList
+      },
+      index () {
+        return this.$store.getters.index
+      },
+      totalTasks () {
+        return this.$store.getters.tasksLeft
+      },
     },
     
-    noTasks: function () {
-      let result = false
+    created () {
+      let index = 1,
+          taskList = []
 
-      if (this.mode === 'todo') {
-        result = this.tasks.filter(task => task.state.length === 0).length === 0
-      } else {
-        result = this.tasks.length === 0
-      }
-      
-      return result
+      this.manageLocalStorage('index', index)
+      this.manageLocalStorage('taskList', taskList)
+
+      this.$store.commit('saveTask')
     },
-
-    filteredTasks: function () {
-      if (this.tasks.length === 0) { return false }
-
-      if (this.command.action === '/f') {
-        if (this.command.params.length > 0) {
-          return this.tasks.filter(task => task.title.toLowerCase().indexOf(this.command.params.toLowerCase()) >= 0)
-        }
-      }
-      
-      return this.tasks
-    }
-  },
-  
-  watch: {
-    tasks: {
-      deep: true,
-      handler: function() {
-        if (this.timeout) {
-          clearTimeout(this.timeout)
+    
+    methods: {
+      manageLocalStorage (field = 'index', value) {
+        if (!localStorage.getItem(field)) {
+          localStorage.setItem(field, JSON.stringify(value))
+        } else {
+          try {
+            value = JSON.parse(localStorage.getItem(field))
+          } catch {
+            let backup = localStorage.getItem(field)
+            localStorage.setItem(`${field}.backup`, backup)
+            localStorage.setItem(field, JSON.stringify(value))
+          }
         }
 
-        this.timeout = setTimeout(() => {
-          localStorage.setItem('tasks', JSON.stringify(this.tasks));
-        }, 1000);
-      }
-    },
-    
-    mode: function() {
-      localStorage.setItem('mode', this.mode);
-    }
-  },
-  
-  mounted () {
-    if (localStorage.getItem('index')) {
-      this.index = parseInt(localStorage.getItem('index'));
-    } else {
-      localStorage.setItem('index', this.index)
-    }
+        this.$store.commit(field, value)
+      },
 
-    this.current = new Task(this.index)
+      updateLocalStorage (field = 'index') {
+        let value = this.$store.getters[field]
+        localStorage.setItem(field, JSON.stringify(value))
+      },
 
-    try {
-      if(localStorage.getItem('tasks')) {
-        let tasks = localStorage.getItem('tasks')
-        this.tasks = JSON.parse(tasks);
-      }
-    } catch (e) {
-      // @ToDo: Handle
-      // console.log(e)
-      return false
-    }
-  
-    if (localStorage.getItem('mode')) {
-      this.mode = localStorage.getItem('mode');
-    }
-  },
-  
-  methods: {
-    classState: function(state) {
-      return (state === 'done' ? 'row--' + state : '')
-    },
+      createTask () {
+        this.$store.dispatch('pushTask')
 
-    openEditor: function(task, editTask = false) {
-      if (editTask) {
-        this.current = JSON.parse(JSON.stringify(task))
-      }
+        this.updateLocalStorage('index')
+        this.updateLocalStorage('taskList')
+      },
 
-      if (!this.editor) {
-        this.editor = true
-        this.$refs.textarea.focus()
-      } else if (this.editor) {
-        this.editor = false
-        this.$refs.title.focus()
-      }
-    },
+      updateTask () {
+        this.updateLocalStorage('index')
+        this.updateLocalStorage('taskList')
+      },
 
-    inputParse (input) {
-      let reg = /\/[a-zA-Z].{0,}\s.{1,}/;
-
-      if (input.match(reg)) {
-        let action = input.split(/ (.+)/)[0]
-        let params = input.split(/ (.+)/)[1]
-
-        if (action && action.length > 0) {
-          this.command.action = input.split(/ (.+)/)[0]
+      removeTask: function(taskId) {
+        if (confirm('Are you sure?')) {
+          this.$store.commit('removeTask', taskId)
+          
+          this.updateLocalStorage('index')
+          this.updateLocalStorage('taskList')
         }
-        
-        if (params && params.length > 0) {
-          this.command.params = input.split(/ (.+)/)[1]
-        }
-
-      } else {
-          this.command.action = false
-          this.command.params = false
-      }
-    },
-    
-    changeMode: function(state) {
-      this.mode = state;
-    },
-
-    extractLinks: function(string) {
-      let reg = /(https?:\/\/[^\s]+)/g;
-      return string.match(reg);
-    },
-    
-    createTask: function() {
-      let reg = /\/[a-zA-Z].{0,}\s.{1,}/;
-
-      if (this.current.title.match(reg)) {
-        this.command.action = this.omniInput.split(/ (.+)/)[0]
-        this.command.params = this.omniInput.split(/ (.+)/)[1]
-      } else if (this.current.title.length > 0) {
-        let task = this.current
-        this.index++
-        localStorage.setItem('index', this.index)
-
-        this.tasks.unshift(task);
-        this.current = new Task(this.index);
-      }
-
-      if (this.editor) {
-        this.editor = false
-        this.$refs.title.focus()
-      }
-    },
-    
-    finishTask: function(task) {
-      this.$set(task, 'state', 'done');
-    },
-        
-    renewTask: function(task) {
-      this.$set(task, 'state', '');
-    },
-    
-    removeTask: function(task) {
-      if (confirm('Are you sure?')) {
-        this.tasks.splice(this.tasks.indexOf(task), 1);
       }
     }
   }
-}
 </script>
-
-<style lang="scss">
-  @import 'src/assets/scss/index.scss';
-</style>
