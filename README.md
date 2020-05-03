@@ -43,6 +43,7 @@ yarn run lint
 ## Next tasks
 
 - [x] Re-factor the code: implement vuex store
+- [ ] Tidy up tailwind styles
 - [ ] Implement search on command `/f find` 
 - [ ] Add API option to store the data on the server (or Firebase)
 - [ ] Add data types: links, vocabulary, note, contacts etc.
