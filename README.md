@@ -34,7 +34,9 @@ yarn run lint
 ### Links
 
 [Configuration Reference](https://cli.vuejs.org/config/).
+
 [Tailwind.css Documentation](https://tailwindcss.com/docs/).
+
 [Fontawesome Icons](https://fontawesome.com/icons/).
 
 
