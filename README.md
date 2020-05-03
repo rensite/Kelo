@@ -4,6 +4,8 @@ The service helps you to easily save any kind of data for later use. Currently u
 
 Contact me if you would like to join the project: web@rensite.ru
 
+Demo is availabe at [kelo.rensite.ru](https://kelo.rensite.ru)
+
 ## Project setup
 ```
 yarn install
