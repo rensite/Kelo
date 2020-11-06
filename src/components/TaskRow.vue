@@ -1,53 +1,91 @@
 <template>
     <div class="row flex relative z-0 hover:z-10">
         <div class="w-full relative">
-            <input v-model="task.title" @keydown.enter="updateTask($event, 'title', task.title)" class="input px-2 md:px-4 py-2 md:py-4 text-md w-full rounded-sm md:rounded-lg bg-transparent" :class="task.state ? 'line-through text-gray-400' : ''" type="text" tabindex="1" />   
+          <input
+            :value="task.title"
+            @keydown.enter="updateTask({
+              'taskPosition': taskPosition,
+              'taskField': 'title',
+              'newTitle': $event.target.value,
+            })"
+            class="input px-2 md:px-4 py-2 md:py-4 text-md w-full rounded-sm md:rounded-lg bg-transparent"
+            :class="task.state ? 'line-through text-gray-400' : ''"
+            type="text"
+            tabindex="1"
+          />
 
-            <div class="buttons hidden absolute top-0 right-0 flex bg-gray-100">
-                <button v-if="task.state" @click="updateTask($event, 'state', false)" class="btn" target="_blank">
-                    <font-awesome-icon icon="redo-alt" class="text-md" />
-                </button>
-                <button v-else @click="updateTask($event, 'state', true)" class="btn" target="_blank">
-                    <font-awesome-icon icon="check" class="text-md" />
-                </button>
+          <div class="buttons hidden absolute top-0 right-0 flex bg-gray-100">
+            <button
+              @click="toggleTaskState(task.id)"
+              class="btn"
+            >
+              <font-awesome-icon
+                v-if="task.state"
+                icon="redo-alt"
+                class="text-md"
+              />
+              <font-awesome-icon
+                v-else
+                icon="check"
+                class="text-md"
+              />
+            </button>
 
-                <button @click="removeTask" class="btn" target="_blank">
-                    <font-awesome-icon icon="trash-alt" class="text-md" />
-                </button>
-            </div>
+            <button
+              @click="removeTask(task.id)"
+              class="btn"
+            >
+              <font-awesome-icon
+                icon="trash-alt"
+                class="text-md"
+              />
+            </button>
+          </div>
         </div>
-        <a v-for="link in extractLinks(task.title)" :key="link" :href="link" class="btn ml-2 md:ml-4" target="_blank">
-            <font-awesome-icon icon="link" class="text-md" />
+        <a
+          v-for="link in extractLinks(task.title)"
+          :key="link"
+          :href="link"
+          class="btn ml-2 md:ml-4"
+          target="_blank"
+        >
+          <font-awesome-icon
+            icon="link"
+            class="text-md"
+          />
         </a>
     </div>
 </template>
 
 <script>
-    export default {
-        name: "TaskRow",
-        props: {
-            task: {
-                type: Object,
-                default: () => {
-                    return {}
-                }
-            }
-        },
-        methods: {
-            extractLinks (string) {
-                let reg = /(https?:\/\/[^\s]+)/g;
-                return string.match(reg);
-            },
-            updateTask (event, field, value) {
-                this.$set(this.task, field, value)
-                this.$emit('updateTask')
-                event.currentTarget.blur()
-            },
-            removeTask () {
-                this.$emit('removeTask', this.task.id)
-            },
-        }
+import { mapActions } from 'vuex';
+
+export default {
+  name: 'TaskRow',
+  props: {
+    task: {
+      type: Object,
+      default: () => {
+        return {};
+      }
+    },
+    taskPosition: {
+      type: Number,
+      default: 0,
     }
+  },
+  methods: {
+    ...mapActions({
+      removeTask: 'removeTask',
+      toggleTaskState: 'toggleTaskState',
+      updateTask: 'updateTask',
+    }),
+    extractLinks (str = '') {
+      let reg = /(https?:\/\/[^\s]+)/g;
+      return str.match(reg);
+    },
+  }
+};
 </script>
 
 <style lang="scss">

@@ -1,68 +1,80 @@
-import Vue from 'vue'
-import Vuex from 'vuex'
+import Vue from 'vue';
+import Vuex from 'vuex';
+import Task from './classes/Task.js';
+import VuexPersistence from 'vuex-persist';
 
-Vue.use(Vuex)
+Vue.use(Vuex);
 
-class Task {
-    constructor(id = 0, title = '', text = '', state = false) {
-        this.id = id;
-        this.title = title;
-        this.text = text;
-        this.state = state;
-    }
-  }
+const vuexLocal = new VuexPersistence({
+  storage: window.localStorage
+});
 
 const store = new Vuex.Store({
-    state: {
-        index: 1,
-        task: false,
-        taskList: []
+  state: {
+    currentIndex: 0,
+    taskList: [],
+  },
+  getters: {
+    currentIndex: state => {
+      return state.currentIndex;
     },
-    getters: {
-        index: state => {
-            return state.index
-        },
-        task: state => {
-            return state.task
-        },
-        taskList: state => {
-            return state.taskList
-        },
-        totalTasks: state => {
-            return state.taskList.length
-        },
-        tasksLeft: state => {
-            return state.taskList.filter(task => !task.state).length
-        }
+    taskList: state => {
+      return state.taskList;
     },
-    mutations: {
-        taskList (state, taskList) {
-            state.taskList = taskList
-        },
-        saveTask (state) {
-            state.task = new Task(state.index)
-        },
-        index (state, index) {
-            state.index = index
-        },
-        incrementIndex (state) {
-            state.index++
-        },
-        removeTask (state, taskId) {
-            let index = state.taskList.findIndex(task => task.id === taskId)
-            state.taskList.splice(index, 1);
-        }
+    taskListTotal: state => {
+      return state.taskList.length;
     },
-    actions: {
-        pushTask ({commit, getters}) {
-            let taskList = getters.taskList
-            taskList.unshift(getters.task)
-
-            commit('taskList', taskList)
-            commit('incrementIndex')
-            commit('saveTask')
-        }
+    taskListLeft: state => {
+      return state.taskList.filter(task => !task.state).length;
     }
-})
+  },
+  mutations: {
+    rewriteTaskList (state, taskList) {
+      state.taskList = taskList;
+    },
+    updateIndex (state) {
+      // @ToDo: nextIndex has a concurrency problem (i.e. different browser tabs)
+      state.currentIndex++;
+    },
+    updateTask (state, {taskPosition, task}) {
+      state.taskList[taskPosition] = task;
+    }
+  },
+  actions: {
+    createTask ({commit, dispatch, getters}, title) {
+      commit('updateIndex');
+      const { currentIndex } = getters;
+      const task = new Task(title, currentIndex);
+      dispatch('pushTask', task);
+    },
+    pushTask ({commit, getters}, task) {
+      const { taskList } = getters;
+      taskList.push(task);
+      commit('rewriteTaskList', taskList);
+    },
+    updateTask ({getters, commit}, payload) {
+      const {taskPosition, taskField, newTitle} = payload;
+      const task = getters.taskList[taskPosition];
+      task[taskField] = newTitle;
+      commit('updateTask', {taskPosition, task});
+      console.log(taskPosition,task, taskField, newTitle);
+    },
+    removeTask ({getters, commit}, taskId) {
+      if (confirm('Are you sure?')) {
+        const { taskList } = getters;
+        const indexTask = getters.taskList
+          .findIndex(task => task.id === taskId);
+        taskList.splice(indexTask, 1);
+        commit('rewriteTaskList', taskList);
+      }
+    },
+    toggleTaskState ({getters, commit}, taskId) {
+      const task = getters.taskList.find(task => task.id === taskId);
+      task.state = !task.state;
+      commit('updateTask', taskId, task);
+    },
+  },
+  plugins: [vuexLocal.plugin],
+});
 
-export default store
+export default store;
