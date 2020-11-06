@@ -1602,11 +1602,6 @@ autoprefixer@^9.4.5, autoprefixer@^9.7.5:
     postcss "^7.0.27"
     postcss-value-parser "^4.0.3"
 
-autosize@^4.0.2:
-  version "4.0.2"
-  resolved "https://registry.yarnpkg.com/autosize/-/autosize-4.0.2.tgz#073cfd07c8bf45da4b9fd153437f5bafbba1e4c9"
-  integrity sha512-jnSyH2d+qdfPGpWlcuhGiHmqBJ6g3X+8T+iRwFrHPLVcdoGJE/x6Qicm6aDHfTsbgZKxyV8UU/YB2p4cjKDRRA==
-
 aws-sign2@~0.7.0:
   version "0.7.0"
   resolved "https://registry.yarnpkg.com/aws-sign2/-/aws-sign2-0.7.0.tgz#b46e890934a9591f2d2f6f86d7e6a9f1b3fe76a8"
@@ -8901,13 +8896,6 @@ uuid@^3.0.1, uuid@^3.3.2:
   version "3.4.0"
   resolved "https://registry.yarnpkg.com/uuid/-/uuid-3.4.0.tgz#b23e4358afa8a202fe7a100af1f5f883f02007ee"
   integrity sha512-HjSDRw6gZE5JMggctHBcjVak08+KEVhSIiDzFnT9S9aegmp85S/bReBVTb4QTFaRNptJ9kuYaNhnbNEOkbKb/A==
-
-v-autosize@^1.0.3:
-  version "1.0.3"
-  resolved "https://registry.yarnpkg.com/v-autosize/-/v-autosize-1.0.3.tgz#74e86d8a7b72690abad917f307965a86a52c3f26"
-  integrity sha512-hglWoI7tTNFi7GDvHotsID5zl15vyzU6Gzfs91WB9lowy7/N6nfZ3wQCDlf1DGxUwdRxvfOhr+Vnf6evr8QFDQ==
-  dependencies:
-    autosize "^4.0.2"
 
 validate-npm-package-license@^3.0.1:
   version "3.0.4"
