@@ -1,0 +1,13 @@
+.button {
+  @apply py-2 px-3 rounded-lg;
+
+  &:hover {
+      @apply shadow-lg bg-gray-200;
+  }
+
+  @screen md {
+    @apply py-4 px-5;
+  }
+}
+
+

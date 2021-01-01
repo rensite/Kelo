@@ -32,7 +32,7 @@
         </button>
       </form>
 
-      <div>
+      <div class="buttons flex items-center">
         <div v-if="taskListLeft > 0">
           <font-awesome-icon
             icon="fire-alt"
@@ -46,6 +46,17 @@
             class="text-2xl"
           />
         </div>
+
+        <a
+          href="#"
+          class="button ml-2"
+          @click.self="backup"
+        >
+          <font-awesome-icon
+            icon="save"
+            class="text-2xl pointer-events-none"
+          />
+        </a>
       </div>
     </div>
   </header>
@@ -75,6 +86,13 @@ export default {
     },
     clearTask () {
       this.taskTitle = '';
+    },
+    backup(e) {
+      const text = localStorage.getItem('vuex');
+      console.log(text);
+      const file = new Blob([text], {type: 'text/json'});
+      e.target.href = URL.createObjectURL(file);
+      e.target.download = 'kelo-backup.json';
     },
   }
 };

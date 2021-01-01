@@ -26,7 +26,7 @@
           <div class="buttons hidden absolute top-0 right-0 flex bg-gray-100">
             <button
               @click="toggleTaskState(task.id)"
-              class="btn"
+              class="button"
             >
               <font-awesome-icon
                 v-if="task.state"
@@ -42,7 +42,7 @@
 
             <button
               @click="removeTask(task.id)"
-              class="btn"
+              class="button"
             >
               <font-awesome-icon
                 icon="trash-alt"
@@ -55,7 +55,7 @@
           v-for="(link, index) in extractLinks"
           :key="`link${index}`"
           :href="link"
-          class="btn ml-2 md:ml-4"
+          class="button ml-2 md:ml-4"
           target="_blank"
         >
           <font-awesome-icon
@@ -103,7 +103,7 @@ export default {
 };
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
     .input {
         &:focus {
             @apply outline-none;
@@ -123,20 +123,6 @@ export default {
     @screen md {
         .input:focus + .buttons {
             @apply hidden;
-        }
-    }
-
-    .btn {
-        @apply py-2 px-3 rounded-lg;
-
-        &:hover {
-            @apply shadow-lg bg-gray-200;
-        }
-    }
-
-    @screen md {
-        .btn {
-            @apply py-4 px-5;
         }
     }
 </style>
