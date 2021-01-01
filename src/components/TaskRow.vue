@@ -14,6 +14,15 @@
             tabindex="1"
           />
 
+          <div v-if="extractTags" class="absolute bottom-0 left-0 ml-4 z-10">
+            <span
+              v-for="(tag, index) in extractTags"
+              :key="`tag${index}`"
+              class="text-xs mr-2"
+              :class="task.state ? 'text-gray-400' : 'text-blue-500'"
+            >{{ tag }}</span>
+          </div>
+
           <div class="buttons hidden absolute top-0 right-0 flex bg-gray-100">
             <button
               @click="toggleTaskState(task.id)"
@@ -43,8 +52,8 @@
           </div>
         </div>
         <a
-          v-for="link in extractLinks(task.title)"
-          :key="link"
+          v-for="(link, index) in extractLinks"
+          :key="`link${index}`"
           :href="link"
           class="btn ml-2 md:ml-4"
           target="_blank"
@@ -74,16 +83,22 @@ export default {
       default: 0,
     }
   },
+  computed: {
+    extractLinks () {
+      const reg = /(https?:\/\/[^\s]+)/g;
+      return this.task.title.match(reg);
+    },
+    extractTags () {
+      const reg = /(#[^\s]+)/g;
+      return this.task.title.match(reg) || false;
+    },
+  },
   methods: {
     ...mapActions({
       removeTask: 'removeTask',
       toggleTaskState: 'toggleTaskState',
       updateTask: 'updateTask',
     }),
-    extractLinks (str = '') {
-      let reg = /(https?:\/\/[^\s]+)/g;
-      return str.match(reg);
-    },
   }
 };
 </script>

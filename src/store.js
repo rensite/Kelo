@@ -49,7 +49,7 @@ const store = new Vuex.Store({
     },
     pushTask ({commit, getters}, task) {
       const { taskList } = getters;
-      taskList.push(task);
+      taskList.unshift(task);
       commit('rewriteTaskList', taskList);
     },
     updateTask ({getters, commit}, payload) {
