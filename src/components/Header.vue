@@ -22,9 +22,9 @@
           ref="title"
           tabindex="0"
           placeholder="All your data is saved in LocalStorage"
-          class="input w-full px-5 py-3 md:px-6 md:py-3 rounded-0 md:rounded-lg pr-12 border-t-2 border-b-2 md:border-0"
+          class="input w-full pl-5 pr-10 py-3 md:pl-6 md:pr-12 md:py-3 rounded-0 md:rounded-lg border-t-2 border-b-2 md:border-0"
         />
-        <button class="button absolute flex top-0 right-0 bg-gray-300 md:bg-transparent h-full px-4 ">
+        <button v-if="taskTitle.length" class="button absolute flex items-center top-0 right-0 bg-gray-300 md:bg-transparent h-full px-4 ">
           <font-awesome-icon
             icon="plus"
             class="text-2xl text-gray-800 md:text-gray-500 hover:text-gray-800"
@@ -68,8 +68,10 @@ export default {
   },
   methods: {
     createTask () {
-      this.$emit('create-task', this.taskTitle);
-      this.clearTask();
+      if (this.taskTitle.length) {
+        this.$emit('create-task', this.taskTitle);
+        this.clearTask();
+      }
     },
     clearTask () {
       this.taskTitle = '';
