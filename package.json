@@ -15,7 +15,7 @@
     "@fortawesome/vue-fontawesome": "^0.1.9",
     "core-js": "^2.6.5",
     "node-sass": "^4.14.1",
-    "postcss": "^8.2.2",
+    "postcss": "^8.2.10",
     "sass": "^1.27.0",
     "sass-loader": "^8.0.0",
     "tailwindcss": "^2.0.2",
